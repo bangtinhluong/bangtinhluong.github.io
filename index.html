@@ -361,7 +361,7 @@
                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">Nhập lương 26 công: <strong>{formatCurrency(LuongCuc)}</strong></label>
+                    <label className="block text-sm font-medium text-gray-900"><strong>Nhập lương tháng 26 công</strong> <br /><strong>Kết quả: </strong>{formatCurrency(LuongCuc)}</label>
                     <input
                       type="number"
                       value={LuongCuc}
@@ -371,10 +371,23 @@
                     />
                   </div>
                   
+				  
+				  
+				      <div className="border border-gray-300 p-2 bg-white rounded-md">
+                    <label className="block text-sm font-medium text-gray-900"><strong>Lương cơ bản tính tăng ca</strong><br /><strong>Kết quả: </strong>{formatCurrency(LuongCoBanTangCa)}</label>
+                    <input
+                      type="number"
+                      value={LuongCoBanTangCa}
+                      onChange={handleNumberInput(setLuongCoBanTangCa)}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white"
+                      min="0"
+                    />
+                  </div>
 
+                  
 
                   <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">(Giờ) tăng ca thường 150%</label>
+                    <label className="block text-sm font-medium text-gray-900"><strong>Tăng ca thường: </strong>{NhapGioTangCaThuong} giờ (+150%)<br /><strong>Kết quả:</strong> {formatCurrency(TongTienTangCa150)}</label>
                     <input
                       type="number"
                       value={NhapGioTangCaThuong}
@@ -386,7 +399,7 @@
 
                   
                       <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">(Giờ) tăng ca đêm 210%</label>
+                    <label className="block text-sm font-medium text-gray-900"><strong>Tăng ca đêm: </strong>{NhapGioTangCaDem} giờ (+210%)<br /><strong>Kết quả:</strong> {formatCurrency(TongTienCaDem210)}</label>
                     <input
                       type="number"
                       value={NhapGioTangCaDem}
@@ -398,7 +411,7 @@
                    
 
                   <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">Tổng (Giờ) làm chủ nhật 200%</label>
+                    <label className="block text-sm font-medium text-gray-900"><strong>Tổng giờ chủ nhật: </strong>{NhapGioChuNhat} giờ (+200%)<br /><strong>Kết quả:</strong> {formatCurrency(TongTienTangCa200)}</label>
                     <input
                       type="number"
                       value={NhapGioChuNhat}
@@ -409,22 +422,55 @@
                   </div>
 
                   
+				  
+				
+				  
+				  
+				  
 
                          <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">Số (Ngày) làm chủ nhật đêm 270%</label>
+                    <label className="block text-sm font-medium text-gray-900"><strong>Số đêm làm chủ nhật: </strong>{NhapNgayChuNhat} ngày (+70%)<br /><strong>Kết quả:</strong> {formatCurrency(TongTienTangCa200)} + {formatCurrency(TongChuNhatDem270)}</label>
                     <input
                       type="number"
                       value={NhapNgayChuNhat}
-                      onChange={handleNumberInput(setNhapNgayChuNhat)}
+                      onChange={handleNumberInput(setNhapNgayChuNhat, 5)}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white"
+                      min="0"
+					  max="5" 
+                    />
+                  </div>
+				  
+				  
+				  
+				 
+                    <div className="border border-gray-300 p-2 bg-white rounded-md">
+                    <label className="block text-sm font-medium text-gray-900"><strong>Tổng giờ làm lễ: </strong>{cappedNhapGioLamLe} giờ (+300%)<br /><strong>Kết quả:</strong> {formatCurrency(TongTienTangCa300)}</label>
+                    <input
+                      type="number"
+                      value={NhapGioLamLe}
+                      onChange={handleNumberInput(setNhapGioLamLe, daysInMonth * 8)}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white"
+                      min="0"
+                    />
+                  </div>       
+
+                  
+				  
+				  
+				  <div className="border border-gray-300 p-2 bg-white rounded-md">
+                    <label className="block text-sm font-medium text-gray-900"><strong>Số đêm làm Lễ: </strong>{cappedNhapNgayLamLe} ngày (+90%)<br /><strong>Kết quả:</strong> {formatCurrency(TongTienTangCa300)} + {formatCurrency(TongLeDem390)}</label>
+                    <input
+                      type="number"
+                      value={NhapNgayLamLe}
+                      onChange={handleNumberInput(setNhapNgayLamLe, 5)}
                       className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white"
                       min="0"
                     />
                   </div>
 				  
 				  
-				  
-				  <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">Số (Ngày) làm đêm 130%</label>
+				   <div className="border border-gray-300 p-2 bg-white rounded-md">
+                    <label className="block text-sm font-medium text-gray-900"><strong>Làm đêm: </strong>{cappedNhapNgayLamDem} Ngày (+30%)<br /><strong>Kết quả:</strong> {formatCurrency(SoNgayLamDem)} + <strong>Tiền Ăn </strong>{formatCurrency(TienAn)}</label>
                     <input
                       type="number"
                       value={NhapNgayLamDem}
@@ -433,43 +479,7 @@
                       min="0"
                     />
                   </div>
-
-
-                  <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">Tổng (Giờ) làm lễ 300%</label>
-                    <input
-                      type="number"
-                      value={NhapGioLamLe}
-                      onChange={handleNumberInput(setNhapGioLamLe, daysInMonth * 8)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white"
-                      min="0"
-                    />
-                  </div>
-				  
-				  
-				  <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">Số (Ngày) làm lễ đêm 390%</label>
-                    <input
-                      type="number"
-                      value={NhapNgayLamLe}
-                      onChange={handleNumberInput(setNhapNgayLamLe, daysInMonth * 8)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white"
-                      min="0"
-                    />
-                  </div>
-				  
-				  
-				  
-                  <div className="border border-gray-300 p-2 bg-white rounded-md">
-                    <label className="block text-sm font-medium text-gray-900">Lương tính tăng ca<strong> {formatCurrency(LuongCoBanTangCa)}</strong></label>
-                    <input
-                      type="number"
-                      value={LuongCoBanTangCa}
-                      onChange={handleNumberInput(setLuongCoBanTangCa)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white"
-                      min="0"
-                    />
-                  </div>
+              
 				  
 				  
 				  
