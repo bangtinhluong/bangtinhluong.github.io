@@ -275,9 +275,10 @@
       const totalTongSoGioTangCa = NhapGioLamLe + NhapGioChuNhat + NhapGioTangCaThuong + NhapGioTangCaDem;
 	  
 	  const TienLamDem130 = TienCongMotGio * 0.3;
-      const SoNgayLamDem = cappedNhapNgayLamDem * 6 * (TienCongMotGio * 0.3) + cappedNhapNgayLamDem * 30000;
+      const SoNgayLamDem = cappedNhapNgayLamDem * 6 * (TienCongMotGio * 0.3);
+      const TienAn = cappedNhapNgayLamDem * 30000;
 
-      const totalSalary = LuongCuc + totalTongTienTangCa + SoNgayLamDem;
+      const totalSalary = LuongCuc + totalTongTienTangCa + SoNgayLamDem + TienAn;
 	  
 	  
 	  
