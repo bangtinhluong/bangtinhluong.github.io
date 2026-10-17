@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo lỗi theo line</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --bg:#f6f5f0; --card:#ffffff; --ink:#1d1d1b; --muted:#6b6a64; --line:#d9d6cb;
+  --amber:#ffc000; --amber-d:#b98600; --ok:#2f7d4f; --danger:#b3392b;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#171715; --card:#222220; --ink:#f1efe6; --muted:#a09e94; --line:#3a3935; --amber-d:#ffc000;}
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:12px 12px 120px;max-width:720px;margin:0 auto}
+h1{font-size:20px;margin:6px 0 12px}
+h2{font-size:15px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+.f{flex:1;min-width:130px}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer}
+button.primary{background:var(--amber);border-color:var(--amber);color:#1d1d1b;font-weight:700}
+button.danger{color:var(--danger)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px}
+.tab{white-space:nowrap}
+.tab.on{background:var(--amber);border-color:var(--amber);color:#1d1d1b;font-weight:700}
+.dayhead{display:flex;justify-content:space-between;align-items:center;background:var(--amber);color:#1d1d1b;margin:-12px -12px 10px;padding:8px 12px;border-radius:9px 9px 0 0;font-weight:700}
+.err{display:grid;grid-template-columns:1fr 84px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.err:last-of-type{border-bottom:0}
+.err b{display:block;font-size:15px}
+.err small{color:var(--muted);display:block;font-size:12.5px;word-break:break-word}
+.err input{text-align:center;font-size:18px;font-weight:700;padding:8px 4px}
+details summary{cursor:pointer;font-weight:700;padding:4px 0}
+.cat{border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0}
+.cat .g{display:grid;gap:8px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;max-width:720px;margin:0 auto}
+.bar button{flex:1}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 0}
+</style>
+</head>
+<body>
+<h1>Báo cáo lỗi theo line</h1>
+
+<div class="card">
+  <div class="row">
+    <div class="f"><label for="start">Ngày bắt đầu</label><input type="date" id="start"></div>
+    <div class="f"><label for="ndays">Số ngày</label>
+      <select id="ndays"><option>5</option><option>6</option><option>7</option></select></div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div id="lineTools" class="row" style="margin-bottom:12px"></div>
+<div id="days"></div>
+
+<div class="card">
+  <details>
+    <summary>Danh sách lỗi có sẵn (sửa / thêm lỗi)</summary>
+    <p class="hint">Chỉ cần viết 1 lần, lần sau tự lưu trên máy này. Lỗi nào số lượng để trống hoặc 0 sẽ không hiện trong file.</p>
+    <div id="catalog"></div>
+    <div class="row">
+      <button id="addErr">+ Thêm lỗi</button>
+      <button id="restoreErr">Khôi phục lỗi mặc định đã xoá</button>
+    </div>
+  </details>
+</div>
+
+<div class="bar">
+  <button class="primary" id="exportBtn">Xuất file Excel (tất cả line)</button>
+</div>
+
+<script>
+const KEY='loi_report_v1';
+const DEFAULT_CAT=[
+ {id:'e1',cn:'Mes查询失败',vi:'Lọt trạm',cause:'Chưa sao mã vào trạm DPO',fix:'Yêu cầu sản xuất sao mã vào trạm DPO trước khi cho liệu vào máy',end:'OP'},
+ {id:'e2',cn:'盒子放反请重新放盒子',vi:'Hộp thả ngược',cause:'Công đoạn trên dán tem sai vị trí',fix:'Quay hộp ngược lại và dán lại tem đúng vị trí',end:'OP'},
+ {id:'e3',cn:'上料扫码枪返回数据超时',vi:'Sảo mã lỗi quá thời gian',cause:'Do tem lưu trình bị rách, mờ, bị bẩn, nhăn',fix:'Lau sạch vết bẩn, dán lại tem cho phẳng, in lại tem nếu bị rách',end:'OP'}
+];
+function mondayISO(){const d=new Date();const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return iso(d)}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.lines)return s}catch(e){}return null}
+let S=load()||{start:mondayISO(),n:5,cat:DEFAULT_CAT,lines:[{name:'Line 1',data:{}}],cur:0};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const $=s=>document.querySelector(s);
+
+function dates(){
+  const [y,m,d]=S.start.split('-').map(Number);const out=[];
+  for(let i=0;i<S.n;i++){const x=new Date(y,m-1,d+i);out.push({key:iso(x),label:String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')})}
+  return out;
+}
+function dayTotal(line,key){const o=line.data[key]||{};return S.cat.reduce((t,e)=>t+(+o[e.id]||0),0)}
+
+function renderTop(){
+  $('#start').value=S.start;$('#ndays').value=String(S.n);
+  $('#tabs').innerHTML=S.lines.map((l,i)=>`<button class="tab ${i===S.cur?'on':''}" data-i="${i}">${esc(l.name)}</button>`).join('')+`<button class="tab" id="addLine">+ Line</button>`;
+  const l=S.lines[S.cur];
+  $('#lineTools').innerHTML=`<div class="f"><label for="lname">Tên line</label><input id="lname" value="${esc(l.name)}"></div>
+    <button id="copyPrev" title="Chép số liệu line trước">Chép từ line trước</button>
+    ${S.lines.length>1?'<button class="danger" id="delLine">Xoá line</button>':''}`;
+}
+function renderDays(){
+  const l=S.lines[S.cur];
+  $('#days').innerHTML=dates().map(d=>{
+    const o=l.data[d.key]||{};
+    return `<div class="card"><div class="dayhead"><span>${esc(l.name)} ${d.label}</span><span>Tổng: <span data-total="${d.key}">${dayTotal(l,d.key)}</span></span></div>`+
+    S.cat.map(e=>`<div class="err"><div><b>${esc(e.vi)}</b><small>${esc(e.cn)}</small></div>
+      <input type="number" inputmode="numeric" min="0" placeholder="0" data-k="${d.key}" data-e="${e.id}" value="${o[e.id]??''}"></div>`).join('')+`</div>`;
+  }).join('');
+}
+function renderCat(){
+  $('#catalog').innerHTML=S.cat.map((e,i)=>`<div class="cat"><div class="g">
+    <div><label>Báo lỗi (tiếng Trung / tên trên máy)</label><input data-c="${i}" data-f="cn" value="${esc(e.cn)}"></div>
+    <div><label>Tên lỗi</label><input data-c="${i}" data-f="vi" value="${esc(e.vi)}"></div>
+    <div><label>Nguyên nhân</label><textarea rows="2" data-c="${i}" data-f="cause">${esc(e.cause)}</textarea></div>
+    <div><label>Cách xử lý</label><textarea rows="2" data-c="${i}" data-f="fix">${esc(e.fix)}</textarea></div>
+    <div><label>Kết luận</label><input data-c="${i}" data-f="end" value="${esc(e.end)}"></div>
+    <button class="danger" data-delc="${i}">Xoá lỗi này</button></div></div>`).join('');
+}
+function renderAll(){renderTop();renderDays();renderCat()}
+
+document.addEventListener('input',ev=>{
+  const t=ev.target;
+  if(t.id==='start'){if(t.value){S.start=t.value;save();renderDays()}return}
+  if(t.id==='ndays'){S.n=+t.value;save();renderDays();return}
+  if(t.id==='lname'){S.lines[S.cur].name=t.value;save();const b=document.querySelector(`.tab[data-i="${S.cur}"]`);if(b)b.textContent=t.value||'Line';document.querySelectorAll('.dayhead span:first-child').forEach((s,i)=>{s.textContent=(t.value||'')+' '+dates()[i].label});return}
+  if(t.dataset.k){
+    const l=S.lines[S.cur];(l.data[t.dataset.k]??={})[t.dataset.e]=t.value===''?'':Math.max(0,+t.value);
+    save();const tot=document.querySelector(`[data-total="${t.dataset.k}"]`);if(tot)tot.textContent=dayTotal(l,t.dataset.k);return}
+  if(t.dataset.c!==undefined){S.cat[+t.dataset.c][t.dataset.f]=t.value;save();if(t.dataset.f==='vi'||t.dataset.f==='cn')renderDaysKeepFocus()}
+});
+function renderDaysKeepFocus(){/* cập nhật nhãn lỗi sau khi sửa, không làm mất ô đang gõ */
+  clearTimeout(renderDaysKeepFocus.t);renderDaysKeepFocus.t=setTimeout(renderDays,600)}
+
+document.addEventListener('click',ev=>{
+  const t=ev.target.closest('button');if(!t)return;
+  if(t.classList.contains('tab')&&t.dataset.i!==undefined){S.cur=+t.dataset.i;save();renderTop();renderDays();return}
+  if(t.id==='addLine'){S.lines.push({name:'Line '+(S.lines.length+1),data:{}});S.cur=S.lines.length-1;save();renderAll();return}
+  if(t.id==='delLine'){if(confirm('Xoá '+S.lines[S.cur].name+'?')){S.lines.splice(S.cur,1);S.cur=0;save();renderAll()}return}
+  if(t.id==='copyPrev'){if(S.cur>0){S.lines[S.cur].data=JSON.parse(JSON.stringify(S.lines[S.cur-1].data));save();renderDays()}else alert('Đây là line đầu tiên.');return}
+  if(t.id==='addErr'){S.cat.push({id:'e'+Date.now(),cn:'',vi:'Lỗi mới',cause:'',fix:'',end:'OP'});save();renderCat();renderDays();return}
+  if(t.id==='restoreErr'){
+    const miss=DEFAULT_CAT.filter(d=>!S.cat.some(e=>e.id===d.id));
+    if(!miss.length){alert('Không có lỗi mặc định nào bị xoá.');return}
+    miss.forEach(d=>S.cat.push({...d}));save();renderCat();renderDays();
+    alert('Đã khôi phục '+miss.length+' lỗi.');return}
+  if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){S.cat.splice(+t.dataset.delc,1);save();renderCat();renderDays()}return}
+  if(t.id==='exportBtn')exportXlsx();
+});
+
+async function exportXlsx(){
+  if(typeof ExcelJS==='undefined'){alert('Chưa tải được thư viện Excel. Kiểm tra mạng rồi thử lại.');return}
+  const wb=new ExcelJS.Workbook();
+  const thin={style:'thin',color:{argb:'FF000000'}};
+  const border={top:thin,left:thin,bottom:thin,right:thin};
+  const used=new Set();
+  S.lines.forEach((line,idx)=>{
+    let nm=(line.name||'Line '+(idx+1)).replace(/[\\\/\?\*\[\]:]/g,'').slice(0,28)||'Line';
+    while(used.has(nm.toLowerCase()))nm+='_';used.add(nm.toLowerCase());
+    const ws=wb.addWorksheet(nm);
+    [30,14,26,40,70,12].forEach((w,i)=>ws.getColumn(i+1).width=w);
+    let r=1;
+    dates().forEach(d=>{
+      const o=line.data[d.key]||{};
+      ws.mergeCells(r,1,r,6);
+      const t=ws.getCell(r,1);t.value=`${line.name} ${d.label}`;
+      t.font={name:'Times New Roman',size:16,bold:true,color:{argb:'FFFFFFFF'}};
+      t.alignment={horizontal:'center',vertical:'middle'};
+      t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFC000'}};
+      ws.getRow(r).height=24;r++;
+      ['Báo Lỗi','Số Lượng Lỗi','Tên Lỗi','Nguyên Nhân','Cách Xử Lý','Kết Luận'].forEach((h,i)=>{
+        const c=ws.getCell(r,i+1);c.value=h;c.font={name:'Arial',size:11,bold:true};c.alignment={horizontal:'center',vertical:'middle'};c.border=border});
+      r++;
+      const first=r;
+      let sum=0;
+      S.cat.forEach(e=>{
+        const q=+o[e.id]||0;if(q<=0)return;sum+=q;
+        [e.cn,q,e.vi,e.cause,e.fix,e.end].forEach((v,i)=>{
+          const c=ws.getCell(r,i+1);c.value=v;c.font={name:'SimSun',size:11};c.border=border;
+          c.alignment={horizontal:(i===1||i===5)?'center':'left',vertical:'middle',wrapText:true}});
+        r++;
+      });
+      ws.getCell(r,1).value='总计';ws.getCell(r,2).value=(r>first)?{formula:`SUM(B${first}:B${r-1})`,result:sum}:0;
+      for(let i=1;i<=6;i++){const c=ws.getCell(r,i);c.border=border;c.font={name:'SimSun',size:11,bold:i<=2};if(i===2)c.alignment={horizontal:'center'}}
+      r++;
+    });
+  });
+  const buf=await wb.xlsx.writeBuffer();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  const f=dates();a.download=`bao-cao-loi_${f[0].label.replace('/','-')}_${f[f.length-1].label.replace('/','-')}.xlsx`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+renderAll();
+</script>
+</body>
+</html>
