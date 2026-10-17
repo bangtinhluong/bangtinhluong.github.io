@@ -180,7 +180,10 @@ async function exportXlsx(){
     let nm=(line.name||'Line '+(idx+1)).replace(/[\\\/\?\*\[\]:]/g,'').slice(0,28)||'Line';
     while(used.has(nm.toLowerCase()))nm+='_';used.add(nm.toLowerCase());
     const ws=wb.addWorksheet(nm);
-    [30,14,26,40,70,12].forEach((w,i)=>ws.getColumn(i+1).width=w);
+	
+	
+	//chỉnh kích thước các ô
+    [30,12,30,40,70,12].forEach((w,i)=>ws.getColumn(i+1).width=w);
     let r=1;
     dates().forEach(d=>{
       const o=line.data[d.key]||{};
@@ -190,7 +193,7 @@ async function exportXlsx(){
       t.alignment={horizontal:'center',vertical:'middle'};
       t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFC000'}};
       ws.getRow(r).height=24;r++;
-      ['Báo Lỗi','Số Lượng Lỗi','Tên Lỗi','Nguyên Nhân','Cách Xử Lý','Kết Luận'].forEach((h,i)=>{
+      ['Báo Lỗi','Số Lỗi','Tên Lỗi','Nguyên Nhân','Cách Xử Lý','Kết Luận'].forEach((h,i)=>{
         const c=ws.getCell(r,i+1);c.value=h;c.font={name:'Arial',size:11,bold:true};c.alignment={horizontal:'center',vertical:'middle'};c.border=border});
       r++;
       const first=r;
