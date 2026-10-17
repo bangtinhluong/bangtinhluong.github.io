@@ -68,7 +68,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     <div class="row">
       <button id="addErr">+ Thêm lỗi</button>
       <button id="restoreErr">Khôi phục lỗi đã xoá</button>
-      <button id="syncErr">Khôi phục lỗi mặc định</button>
+      <button id="syncErr">Reset nội dung lỗi theo mặc định</button>
     </div>
     <p class="hint" id="ver"></p>
   </details>
@@ -171,11 +171,13 @@ document.addEventListener('click',ev=>{
     S.cat=DEFAULT_CAT.map(d=>({...d})).concat(S.cat.filter(e=>!ids.includes(e.id)));
     S.deleted=[];save();renderAll();return}
   if(t.id==='restoreErr'){
-    const miss=DEFAULT_CAT.filter(d=>!S.cat.some(e=>e.id===d.id));
-    if(!miss.length){alert('Không có lỗi mặc định nào bị xoá.');return}
-    miss.forEach(d=>S.cat.push({...d}));S.deleted=S.deleted.filter(id=>!miss.some(m=>m.id===id));save();renderCat();renderDays();
-    alert('Đã khôi phục '+miss.length+' lỗi.');return}
-  if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){const [x]=S.cat.splice(+t.dataset.delc,1);if(x&&!S.deleted.includes(x.id))S.deleted.push(x.id);save();renderCat();renderDays()}return}
+    const back=[];
+    (S.trash||[]).forEach(x=>{if(!S.cat.some(e=>e.id===x.id)){S.cat.push({...x});back.push(x)}});
+    DEFAULT_CAT.forEach(d=>{if(!S.cat.some(e=>e.id===d.id)){S.cat.push({...d});back.push(d)}});
+    if(!back.length){alert('Không có lỗi nào đã xoá để khôi phục.');return}
+    S.trash=[];S.deleted=[];save();renderCat();renderDays();
+    alert('Đã khôi phục '+back.length+' lỗi.');return}
+  if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){const [x]=S.cat.splice(+t.dataset.delc,1);if(x){if(!S.deleted.includes(x.id))S.deleted.push(x.id);S.trash=(S.trash||[]).filter(y=>y.id!==x.id);S.trash.push({...x})}save();renderCat();renderDays()}return}
   if(t.id==='exportBtn')exportXlsx(false);
   if(t.id==='exportMergeBtn')exportXlsx(true);
 });
