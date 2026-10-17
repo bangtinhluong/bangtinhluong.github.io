@@ -213,7 +213,7 @@ async function exportXlsx(){
   const buf=await wb.xlsx.writeBuffer();
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
-  const f=dates();a.download=`bao-cao-loi_${f[0].label.replace('/','-')}_${f[f.length-1].label.replace('/','-')}.xlsx`;
+  const f=dates();a.download=`DPO_BaoLoi_${f[0].label.replace('/','.')}-${f[f.length-1].label.replace('/','.')}.xlsx`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 }
 renderAll();
