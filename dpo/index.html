@@ -45,13 +45,13 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
 </style>
 </head>
 <body>
-<h1>Báo cáo lỗi theo line</h1>
+<h1>Tạo bảng báo lỗi excel</h1>
 
 <div class="card">
   <div class="row">
-    <div class="f"><label for="start">Ngày bắt đầu</label><input type="date" id="start"></div>
-    <div class="f"><label for="ndays">Số ngày</label>
-      <select id="ndays"><option>5</option><option>6</option><option>7</option></select></div>
+    <div class="f"><label for="start">chọn ngày bắt đầu</label><input type="date" id="start"></div>
+    <div class="f"><label for="ndays">Số ngày cần tạo</label>
+      <select id="ndays"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></div>
   </div>
 </div>
 
@@ -62,31 +62,42 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
 <div class="card">
   <details>
     <summary>Danh sách lỗi có sẵn (sửa / thêm lỗi)</summary>
-    <p class="hint">Chỉ cần viết 1 lần, lần sau tự lưu trên máy này. Lỗi nào số lượng để trống hoặc 0 sẽ không hiện trong file.</p>
+    <p class="hint">Chỉ cần viết 1 lần, lần sau tự lưu trên máy này. Lỗi nào số lượng để trống hoặc 0 không hiển thị trong Excel.</p>
     <div id="catalog"></div>
     <div class="row">
       <button id="addErr">+ Thêm lỗi</button>
-      <button id="restoreErr">Khôi phục lỗi mặc định đã xoá</button>
+      <button id="restoreErr">Khôi phục lỗi đã xoá</button>
+      <button id="syncErr">Khôi phục lỗi mặc định</button>
     </div>
+    <p class="hint" id="ver"></p>
   </details>
 </div>
 
 <div class="bar">
-  <button class="primary" id="exportBtn">Xuất file Excel (tất cả line)</button>
+  <button class="primary" id="exportBtn">Xuất file Excel</button>
 </div>
 
 <script>
 const KEY='loi_report_v1';
 const DEFAULT_CAT=[
- {id:'e1',cn:'Mes查询失败',vi:'Lọt trạm',cause:'Chưa sao mã vào trạm DPO',fix:'Yêu cầu sản xuất sao mã vào trạm DPO trước khi cho liệu vào máy',end:'OP'},
+ {id:'e1',cn:'Mes查询失败',vi:'Lọt trạm',cause:'Chưa sảo mã vào trạm DPO',fix:'Yêu cầu sản xuất sảo mã vào trạm DPO trước khi cho liệu vào máy',end:'OP'},
  {id:'e2',cn:'盒子放反请重新放盒子',vi:'Hộp thả ngược',cause:'Công đoạn trên dán tem sai vị trí',fix:'Quay hộp ngược lại và dán lại tem đúng vị trí',end:'OP'},
- {id:'e3',cn:'上料扫码枪返回数据超时',vi:'Sảo mã lỗi quá thời gian',cause:'Do tem lưu trình bị rách, mờ, bị bẩn, nhăn',fix:'Lau sạch vết bẩn, dán lại tem cho phẳng, in lại tem nếu bị rách',end:'OP'}
+ {id:'e3',cn:'上料扫码枪返回数据超时',vi:'Sảo mã lỗi quá thời gian',cause:'Do tem lưu trình bị rách, mờ, bị bẩn, nhăn',fix:'Lau sạch vết bẩn, dán lại tem cho phẳng, in lại tem nếu bị rách',end:'OP'},
+ {id:'e4',cn:'PDCA获取模板失败',vi:'PDCA kết nối thất bại',cause:'Mất liên kết với macmini hoặc chưa có bản in trên hệ thống',fix:'Chạy hàng khác trên chuyền nếu còn bị thì liên kết lại với macmini',end:'OP'},
+ {id:'e5',cn:'相机返回的喷码位置与设置的喷码位置相差过大',vi:'Máy ảnh phản hồi vị trí hộp bị lệch quá tiêu chuẩn',cause:'Do dùng băng dính dán tem lưu trình bị tuột',fix:'Bỏ qua và yêu cầu sản xuất dán và miết băng dính cho chắc chắn',end:'OP'},
+ {id:'e6',cn:'复检扫码枪返回数据超时',vi:'Vị trí phụ kiểm sảo mã lỗi quá thời gian',cause:'Mất liên kết với súng sảo mã',fix:'Liên kết lại với súng sảo mã',end:'Machine'},
+ {id:'e7',cn:'上料平台有料检测异常',vi:'Kiểm tra vị trí lên liệu có liệu bất thường',cause:'Do sản xuất nhấc liệu ra máy phát hiện thiếu liệu',fix:'Đặt hộp về đúng vị trí xoá báo lỗi và khởi động',end:'OP'},
+ {id:'e8',cn:'下料横移载加紧失败',vi:'Xi lanh kẹp xuống liệu thất bại',cause:'Do băng dính bị tuột mắc vào trục x1 kéo hộp lệch vị trí',fix:'Đặt hộp về đúng vị trí xi lanh kẹp liệu',end:'OP'}
 ];
 function mondayISO(){const d=new Date();const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return iso(d)}
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.lines)return s}catch(e){}return null}
-let S=load()||{start:mondayISO(),n:5,cat:DEFAULT_CAT,lines:[{name:'Line 1',data:{}}],cur:0};
+let S=load()||{start:mondayISO(),n:6,cat:DEFAULT_CAT.map(d=>({...d})),lines:[{name:'Line 1',data:{}}],cur:0};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+/* Tự thêm lỗi mới viết trong code (DEFAULT_CAT) vào danh sách đã lưu, trừ lỗi bạn đã chủ động xoá */
+S.deleted=S.deleted||[];
+DEFAULT_CAT.forEach(d=>{if(!S.cat.some(e=>e.id===d.id)&&!S.deleted.includes(d.id))S.cat.push({...d})});
+save();
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const $=s=>document.querySelector(s);
 
@@ -99,10 +110,10 @@ function dayTotal(line,key){const o=line.data[key]||{};return S.cat.reduce((t,e)
 
 function renderTop(){
   $('#start').value=S.start;$('#ndays').value=String(S.n);
-  $('#tabs').innerHTML=S.lines.map((l,i)=>`<button class="tab ${i===S.cur?'on':''}" data-i="${i}">${esc(l.name)}</button>`).join('')+`<button class="tab" id="addLine">+ Line</button>`;
+  $('#tabs').innerHTML=S.lines.map((l,i)=>`<button class="tab ${i===S.cur?'on':''}" data-i="${i}">${esc(l.name)}</button>`).join('')+`<button class="tab" id="addLine">Thêm Line</button>`;
   const l=S.lines[S.cur];
-  $('#lineTools').innerHTML=`<div class="f"><label for="lname">Tên line</label><input id="lname" value="${esc(l.name)}"></div>
-    <button id="copyPrev" title="Chép số liệu line trước">Chép từ line trước</button>
+  $('#lineTools').innerHTML=`<div class="f"><label for="lname">Tên line có thể sửa</label><input id="lname" value="${esc(l.name)}"></div>
+    <button id="copyPrev" title="Chép số liệu line trước">Copy line trước</button>
     ${S.lines.length>1?'<button class="danger" id="delLine">Xoá line</button>':''}`;
 }
 function renderDays(){
@@ -123,7 +134,7 @@ function renderCat(){
     <div><label>Kết luận</label><input data-c="${i}" data-f="end" value="${esc(e.end)}"></div>
     <button class="danger" data-delc="${i}">Xoá lỗi này</button></div></div>`).join('');
 }
-function renderAll(){renderTop();renderDays();renderCat()}
+function renderAll(){renderTop();renderDays();renderCat();$('#ver').textContent='Phiên bản file: 3 · Đang có '+S.cat.length+' lỗi (trong code có '+DEFAULT_CAT.length+' lỗi mặc định)'}
 
 document.addEventListener('input',ev=>{
   const t=ev.target;
@@ -145,12 +156,17 @@ document.addEventListener('click',ev=>{
   if(t.id==='delLine'){if(confirm('Xoá '+S.lines[S.cur].name+'?')){S.lines.splice(S.cur,1);S.cur=0;save();renderAll()}return}
   if(t.id==='copyPrev'){if(S.cur>0){S.lines[S.cur].data=JSON.parse(JSON.stringify(S.lines[S.cur-1].data));save();renderDays()}else alert('Đây là line đầu tiên.');return}
   if(t.id==='addErr'){S.cat.push({id:'e'+Date.now(),cn:'',vi:'Lỗi mới',cause:'',fix:'',end:'OP'});save();renderCat();renderDays();return}
+  if(t.id==='syncErr'){
+    if(!confirm('Đặt lại các lỗi mặc định đúng theo code (lỗi bạn tự thêm trên trang vẫn giữ)?'))return;
+    const ids=DEFAULT_CAT.map(d=>d.id);
+    S.cat=DEFAULT_CAT.map(d=>({...d})).concat(S.cat.filter(e=>!ids.includes(e.id)));
+    S.deleted=[];save();renderAll();return}
   if(t.id==='restoreErr'){
     const miss=DEFAULT_CAT.filter(d=>!S.cat.some(e=>e.id===d.id));
     if(!miss.length){alert('Không có lỗi mặc định nào bị xoá.');return}
-    miss.forEach(d=>S.cat.push({...d}));save();renderCat();renderDays();
+    miss.forEach(d=>S.cat.push({...d}));S.deleted=S.deleted.filter(id=>!miss.some(m=>m.id===id));save();renderCat();renderDays();
     alert('Đã khôi phục '+miss.length+' lỗi.');return}
-  if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){S.cat.splice(+t.dataset.delc,1);save();renderCat();renderDays()}return}
+  if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){const [x]=S.cat.splice(+t.dataset.delc,1);if(x&&!S.deleted.includes(x.id))S.deleted.push(x.id);save();renderCat();renderDays()}return}
   if(t.id==='exportBtn')exportXlsx();
 });
 
