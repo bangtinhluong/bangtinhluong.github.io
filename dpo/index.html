@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo lỗi theo line</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --bg:#f6f5f0; --card:#ffffff; --ink:#1d1d1b; --muted:#6b6a64; --line:#d9d6cb;
+  --amber:#ffc000; --amber-d:#b98600; --ok:#2f7d4f; --danger:#b3392b;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#171715; --card:#222220; --ink:#f1efe6; --muted:#a09e94; --line:#3a3935; --amber-d:#ffc000;}
+}
+*{box-sizing:border-box}
+html,body{background:var(--ink);margin:0}
+body{background:var(--card);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:12px 12px 120px;max-width:720px;margin:0 auto}
+h1{color:var(--bg);font-size:20px;margin:6px 0 12px;padding: 10px;background:var(--danger)}
+h2{font-size:15px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label{font-size:18px;color:var(--ink);display:block;margin-bottom:3px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+.f{flex:1;min-width:130px}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer}
+button.primary{background:var(--amber);border-color:var(--amber);color:#1d1d1b;font-weight:700}
+button.danger{font-weight:500;color:var(--card);background:var(--danger)}
+button:disabled{opacity:.4;cursor:default}
+.tabs{display:flex;flex-wrap:wrap;gap:5px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px}
+.tab{white-space:nowrap}
+.tab.on{background:var(--amber);border-color:var(--amber);color:#1d1d1b;font-weight:700}
+.dayhead{display:flex;justify-content:space-between;align-items:center;background:var(--amber);color:#1d1d1b;margin:-12px -12px 10px;padding:8px 12px;border-radius:9px 9px 0 0;font-weight:700}
+.err{display:grid;grid-template-columns:1fr 84px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.err:last-of-type{border-bottom:0}
+.err b{display:block;font-size:15px}
+.err small{color:var(--muted);display:block;font-size:12.5px;word-break:break-word}
+.err input{text-align:center;font-size:18px;font-weight:700;padding:8px 4px}
+details summary{border-bottom:solid var(--ink);cursor:pointer;font-weight:700;padding:4px 0}
+.cat{border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0}
+.cat .g{display:grid;gap:8px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;max-width:720px;margin:0 auto}
+.bar button{flex:1}
+.err.alt{margin-left:14px;border-left:3px solid var(--amber);padding-left:10px}
+.alt-box{border-left:3px solid var(--danger);padding-left:10px;margin-top:6px;display:grid;gap:8px}
+#pv{position:fixed;inset:0;background:var(--bg);z-index:50;overflow:auto;padding:0 12px calc(20px + env(safe-area-inset-bottom,0px));display:none}
+#pv.on{display:block}
+.pvbar{position:sticky;top:0;background:var(--bg);display:flex;gap:8px;padding:10px 0;z-index:2;border-bottom:1px solid var(--line);margin-bottom:10px}
+.pvbar button{flex:1}
+.pvday{margin-bottom:14px}
+.pvtitle{background:#ffc000;color:#fff;text-align:center;font:700 16px 'Times New Roman',serif;padding:4px}
+.pvwrap{overflow-x:auto}
+table.pv{border-collapse:collapse;table-layout:fixed;width:100%;min-width:760px;font-size:12.5px;background:var(--card)}
+table.pv th,table.pv td{border:1px solid var(--muted);padding:3px 5px;text-align:left;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word}
+table.pv th{text-align:center}
+table.pv td.c{text-align:center}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 0}
+</style>
+</head>
+<body>
+<h1>Tạo bảng excel báo lỗi máy DPO</h1>
+
+
+<div class="card">
+  <div class="row">
+    <div class="f"><label for="start">Chọn ngày bắt đầu</label><input type="date" id="start"></div>
+    <div class="f"><label for="ndays">Số ngày cần tạo</label>
+      <select id="ndays"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+<div class="tabs" id="tabs"></div>
+<div id="lineTools" class="row" style="margin-bottom:12px"></div>
+<div id="days"></div>
+
+
+
+
+
+
+
+
+
+
+
+<div class="card">
+  <details>
+    <summary>Danh sách lỗi có sẵn (sửa / thêm lỗi)</summary>
+    <p class="hint">Chỉ cần viết 1 lần, lần sau tự lưu trên máy này. Lỗi nào số lượng để trống hoặc 0 không hiển thị trong Excel.</p>
+    <div id="catalog"></div>
+    <div class="row">
+      <button id="addErr">+ Thêm lỗi</button>
+      <button id="restoreErr">Khôi phục lỗi đã xoá</button>
+      <button id="syncErr">Reset nội dung lỗi theo mặc định</button>
+    </div>
+    <p class="hint" id="ver"></p>
+
+
+   
+<p>Hướng dẫn: "Chọn ngày bắt đầu" để chọn ngày cần xuất, chọn "Số ngày cần tạo" để xuất ra số ngày mong muốn</p>
+<p>"Thêm line" và đặt tên line theo  mong muốn,các dữ liệu line hiện thị theo sắp sếp lần lượt từ trái qua phải, "Xoá line" để xoá các Line không cần thiết</p> 
+<p>Nhập số lượng lỗi nếu không nhập thì xuất file ra Excel chúng sẽ không hiển thị</p>
+<p>Nếu lỗi mới không có trong danh sách có thể vào phần "Thêm lỗi" để tạo lỗi mới, nếu nếu lỗi đó có trong danh sách nhưng nguyên nhân bị lỗi khác có thể vào "Thêm nguyên nhân khác" để thêm nguyên nhân và cách xử lý cho lỗi đó</p>
+<p>Xuất kiểu "Gộp Line" thì sẽ hiển thị các Line đã tạo ở 1 trang duy nhất,"Xuất Excel" thì sẽ phân thành nhiều trang mỗi trang hiển thị các line đã tạo dễ nhìn dễ thao tác</p>
+<p>Nếu xoá các lỗi trong danh sách ấn vào "Khôi phục lỗi đã xoá" để phục hồi, nếu các lỗi đã bị chỉnh sửa muốn hiển thị lỗi mặc định như ban đầu ấn vào "Reset nội dung lỗi theo mặc định"</p>
+
+
+
+  </details>
+</div>
+
+
+
+
+<div class="bar">
+  <button  class="primary" id="previewBtn">Xem trước</button>
+  <button class="primary" id="exportMergeBtn">Gộp Line</button>
+  <button class="primary" id="exportBtn">Xuất Excel</button>
+</div>
+
+<div id="pv">
+  <div class="pvbar"><button  class="primary" id="pvClose">← Đóng</button><button class="primary" id="pvExportMerge">Gộp Line</button><button class="primary" id="pvExport">Xuất Excel</button></div>
+  <div id="pvbody"></div>
+</div>
+
+<script>
+const KEY='loi_report_v1';
+const DEFAULT_CAT=[
+ {id:'e1',cn:'Mes查询失败',vi:'Lọt trạm',cause:'Chưa sảo mã vào trạm DPO',fix:'Yêu cầu sản xuất sảo mã vào trạm DPO trước khi cho liệu vào máy',end:'OP'},
+ {id:'e2',cn:'盒子放反请重新放盒子',vi:'Hộp thả ngược',cause:'Công đoạn trên dán tem sai vị trí',fix:'Quay hộp ngược lại và dán lại tem đúng vị trí',end:'OP'},
+ {id:'e3',cn:'上料扫码枪返回数据超时',vi:'Sảo mã lỗi quá thời gian',cause:'Do tem lưu trình bị rách, mờ, bị bẩn, nhăn',fix:'Lau sạch vết bẩn, dán lại tem cho phẳng, in lại tem nếu bị rách',end:'OP'},
+ {id:'e4',cn:'PDCA获取模板失败',vi:'PDCA kết nối thất bại',cause:'Mất liên kết với macmini hoặc chưa có bản in trên hệ thống',fix:'Chạy hàng khác trên chuyền nếu còn bị thì liên kết lại với macmini',end:'OP'},
+ {id:'e5',cn:'相机返回的喷码位置与设置的喷码位置相差过大',vi:'Máy ảnh phản hồi vị trí hộp bị lệch quá tiêu chuẩn',cause:'Do dùng băng dính dán tem lưu trình bị tuột',fix:'Bỏ qua và yêu cầu sản xuất dán và miết băng dính cho chắc chắn',end:'OP'},
+ {id:'e6',cn:'复检扫码枪返回数据超时',vi:'Vị trí phụ kiểm sảo mã lỗi quá thời gian',cause:'Mất liên kết với súng sảo mã',fix:'Liên kết lại với súng sảo mã',end:'Machine'},
+ {id:'e7',cn:'上料平台有料检测异常',vi:'Kiểm tra vị trí lên liệu có liệu bất thường',cause:'Do sản xuất nhấc liệu ra máy phát hiện thiếu liệu',fix:'Đặt hộp về đúng vị trí xoá báo lỗi và khởi động',end:'OP'},
+ {id:'e8',cn:'下料横移载加紧失败',vi:'Xi lanh kẹp xuống liệu thất bại',cause:'Do băng dính bị tuột mắc vào trục x1 kéo hộp lệch vị trí',fix:'Đặt hộp về đúng vị trí xi lanh kẹp liệu',end:'OP'}
+];
+function mondayISO(){const d=new Date();const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return iso(d)}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.lines)return s}catch(e){}return null}
+let S=load()||{start:mondayISO(),n:6,cat:DEFAULT_CAT.map(d=>({...d})),lines:[{name:'Line 1',data:{}}],cur:0};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+/* Tự thêm lỗi mới viết trong code (DEFAULT_CAT) vào danh sách đã lưu, trừ lỗi bạn đã chủ động xoá */
+S.deleted=S.deleted||[];
+/* Sang tuần mới thì tự chọn thứ Hai của tuần đó; trong cùng tuần vẫn giữ ngày bạn đã chọn tay */
+if(S.weekOf!==mondayISO()){S.start=mondayISO();S.weekOf=mondayISO()}
+DEFAULT_CAT.forEach(d=>{if(!S.cat.some(e=>e.id===d.id)&&!S.deleted.includes(d.id))S.cat.push({...d})});
+save();
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const $=s=>document.querySelector(s);
+
+function dates(){
+  const [y,m,d]=S.start.split('-').map(Number);const out=[];
+  for(let i=0;i<S.n;i++){const x=new Date(y,m-1,d+i);out.push({key:iso(x),label:String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')})}
+  return out;
+}
+function qtyKeys(e){return [e.id].concat((e.alts||[]).map(a=>e.id+'~'+a.id))}
+function dayTotal(line,key){const o=line.data[key]||{};return S.cat.reduce((t,e)=>t+qtyKeys(e).reduce((u,k)=>u+(+o[k]||0),0),0)}
+
+function renderTop(){
+  $('#start').value=S.start;$('#ndays').value=String(S.n);
+  $('#tabs').innerHTML=S.lines.map((l,i)=>`<button class="tab ${i===S.cur?'on':''}" data-i="${i}">${esc(l.name)}</button>`).join('')+`<button class="tab" id="addLine">Thêm Line</button>
+  ${S.lines.length>1?'<button class="tab" id="delLine">Xoá line</button>':''}`;
+  const l=S.lines[S.cur];
+  $('#lineTools').innerHTML=`<div class="f"><label for="lname">Tên line có thể sửa</label><input id="lname" value="${esc(l.name)}"></div>
+    <button id="moveL" ${S.cur===0?'disabled':''}>◀ Trái</button>
+    <button id="moveR" ${S.cur===S.lines.length-1?'disabled':''}>Phải ▶</button>
+    <button id="copyPrev" title="Chép số liệu line trước">Copy line trước</button>`;
+}
+function renderDays(){
+  const l=S.lines[S.cur];
+  $('#days').innerHTML=dates().map(d=>{
+    const o=l.data[d.key]||{};
+    return `<div class="card"><div class="dayhead"><span>${esc(l.name)} ${d.label}</span><span>Tổng: <span data-total="${d.key}">${dayTotal(l,d.key)}</span></span></div>`+
+    S.cat.map(e=>`<div class="err"><div><b>${esc(e.vi)}</b><small>${esc(e.cn)}</small></div>
+      <input type="number" inputmode="numeric" min="0" placeholder="0" data-k="${d.key}" data-e="${e.id}" value="${o[e.id]??''}"></div>`+
+      (e.alts||[]).map(a=>`<div class="err alt"><div><b>↳ ${esc(a.label||'Nguyên nhân khác')}</b><small>${esc(a.end)}${a.cause?' · '+esc(a.cause):''}</small></div>
+      <input type="number" inputmode="numeric" min="0" placeholder="0" data-k="${d.key}" data-e="${e.id}~${a.id}" value="${o[e.id+'~'+a.id]??''}"></div>`).join('')).join('')+`</div>`;
+  }).join('');
+}
+function renderCat(){
+  $('#catalog').innerHTML=S.cat.map((e,i)=>`<div class="cat"><div class="g">
+    <div><label>Báo lỗi (tiếng Trung / tên trên máy)</label><input data-c="${i}" data-f="cn" value="${esc(e.cn)}"></div>
+    <div><label>Tên lỗi</label><input data-c="${i}" data-f="vi" value="${esc(e.vi)}"></div>
+    <div><label>Nguyên nhân</label><textarea rows="2" data-c="${i}" data-f="cause">${esc(e.cause)}</textarea></div>
+    <div><label>Cách xử lý</label><textarea rows="2" data-c="${i}" data-f="fix">${esc(e.fix)}</textarea></div>
+    <div><label>Kết luận</label><input data-c="${i}" data-f="end" value="${esc(e.end)}"></div>
+    ${(e.alts||[]).map((a,j)=>`<div class="alt-box">
+      <div><label>Nguyên nhân khác #${j+1}: tên gọi (hiện ở ô nhập)</label><input data-c="${i}" data-a="${j}" data-f="label" value="${esc(a.label)}"></div>
+      <div><label>Nguyên nhân</label><textarea rows="2" data-c="${i}" data-a="${j}" data-f="cause">${esc(a.cause)}</textarea></div>
+      <div><label>Cách xử lý</label><textarea rows="2" data-c="${i}" data-a="${j}" data-f="fix">${esc(a.fix)}</textarea></div>
+      <div><label>Kết luận</label><input data-c="${i}" data-a="${j}" data-f="end" value="${esc(a.end)}"></div>
+      <button class="danger" data-dela="${i}:${j}">Xoá nguyên nhân này</button></div>`).join('')}
+    <button data-adda="${i}">+ Thêm nguyên nhân khác</button>
+    <button class="danger" data-delc="${i}">Xoá lỗi này</button></div></div>`).join('');
+}
+function renderAll(){renderTop();renderDays();renderCat();$('#ver').textContent='Đang có '+S.cat.length+' lỗi (trong code có '+DEFAULT_CAT.length+' lỗi mặc định)'}
+
+document.addEventListener('input',ev=>{
+  const t=ev.target;
+  if(t.id==='start'){if(t.value){S.start=t.value;save();renderDays()}return}
+  if(t.id==='ndays'){S.n=+t.value;save();renderDays();return}
+  if(t.id==='lname'){S.lines[S.cur].name=t.value;save();const b=document.querySelector(`.tab[data-i="${S.cur}"]`);if(b)b.textContent=t.value||'Line';document.querySelectorAll('.dayhead span:first-child').forEach((s,i)=>{s.textContent=(t.value||'')+' '+dates()[i].label});return}
+  if(t.dataset.k){
+    const l=S.lines[S.cur];(l.data[t.dataset.k]??={})[t.dataset.e]=t.value===''?'':Math.max(0,+t.value);
+    save();const tot=document.querySelector(`[data-total="${t.dataset.k}"]`);if(tot)tot.textContent=dayTotal(l,t.dataset.k);return}
+  if(t.dataset.a!==undefined){S.cat[+t.dataset.c].alts[+t.dataset.a][t.dataset.f]=t.value;save();renderDaysKeepFocus();return}
+  if(t.dataset.c!==undefined){S.cat[+t.dataset.c][t.dataset.f]=t.value;save();if(t.dataset.f==='vi'||t.dataset.f==='cn')renderDaysKeepFocus()}
+});
+function renderDaysKeepFocus(){/* cập nhật nhãn lỗi sau khi sửa, không làm mất ô đang gõ */
+  clearTimeout(renderDaysKeepFocus.t);renderDaysKeepFocus.t=setTimeout(renderDays,600)}
+
+document.addEventListener('click',ev=>{
+  const t=ev.target.closest('button');if(!t)return;
+  if(t.classList.contains('tab')&&t.dataset.i!==undefined){S.cur=+t.dataset.i;save();renderTop();renderDays();return}
+  if(t.id==='addLine'){S.lines.push({name:'Line '+(S.lines.length+1),data:{}});S.cur=S.lines.length-1;save();renderAll();return}
+  if(t.id==='moveL'||t.id==='moveR'){
+    const j=S.cur+(t.id==='moveL'?-1:1);
+    if(j<0||j>=S.lines.length)return;
+    [S.lines[S.cur],S.lines[j]]=[S.lines[j],S.lines[S.cur]];
+    S.cur=j;save();renderAll();return}
+  if(t.id==='delLine'){if(confirm('Xoá '+S.lines[S.cur].name+'?')){S.lines.splice(S.cur,1);S.cur=Math.max(0,S.cur-1);save();renderAll()}return}
+  if(t.id==='copyPrev'){if(S.cur>0){S.lines[S.cur].data=JSON.parse(JSON.stringify(S.lines[S.cur-1].data));save();renderDays()}else alert('Đây là line đầu tiên.');return}
+  if(t.id==='addErr'){S.cat.push({id:'e'+Date.now(),cn:'',vi:'Lỗi mới',cause:'',fix:'',end:'OP'});save();renderCat();renderDays();return}
+  if(t.id==='syncErr'){
+    if(!confirm('Đặt lại các lỗi mặc định đúng theo code (lỗi bạn tự thêm trên trang vẫn giữ)?'))return;
+    const ids=DEFAULT_CAT.map(d=>d.id);
+    S.cat=DEFAULT_CAT.map(d=>{const old=S.cat.find(e=>e.id===d.id);return {...d,alts:(old&&old.alts)||[]}}).concat(S.cat.filter(e=>!ids.includes(e.id)));
+    S.deleted=[];save();renderAll();return}
+  if(t.id==='restoreErr'){
+    const back=[];
+    (S.trash||[]).forEach(x=>{if(!S.cat.some(e=>e.id===x.id)){S.cat.push({...x});back.push(x)}});
+    DEFAULT_CAT.forEach(d=>{if(!S.cat.some(e=>e.id===d.id)){S.cat.push({...d});back.push(d)}});
+    if(!back.length){alert('Không có lỗi nào đã xoá để khôi phục.');return}
+    S.trash=[];S.deleted=[];save();renderCat();renderDays();
+    alert('Đã khôi phục '+back.length+' lỗi.');return}
+  if(t.dataset.adda!==undefined){const e=S.cat[+t.dataset.adda];(e.alts=e.alts||[]).push({id:'a'+Date.now(),label:'#Nguyên nhân khác',cause:'Ghi nguyên nhân gây lỗi',fix:'Ghi cách xử lý lỗi',end:'OP hoặc Machine'});save();renderCat();renderDays();return}
+  if(t.dataset.dela!==undefined){const [i,j]=t.dataset.dela.split(':').map(Number);if(confirm('Xoá nguyên nhân này?')){S.cat[i].alts.splice(j,1);save();renderCat();renderDays()}return}
+  if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){const [x]=S.cat.splice(+t.dataset.delc,1);if(x){if(!S.deleted.includes(x.id))S.deleted.push(x.id);S.trash=(S.trash||[]).filter(y=>y.id!==x.id);S.trash.push({...x})}save();renderCat();renderDays()}return}
+  if(t.id==='previewBtn'){renderPreview();return}
+  if(t.id==='pvClose'){$('#pv').classList.remove('on');return}
+  if(t.id==='pvExport'){exportXlsx(false);return}
+  if(t.id==='pvExportMerge'){exportXlsx(true);return}
+  if(t.id==='exportBtn')exportXlsx(false);
+  if(t.id==='exportMergeBtn')exportXlsx(true);
+});
+
+/* Ngày nào line không nhập gì (ô trống hết) thì coi là không sản xuất, không đưa vào xem trước / Excel.
+   Muốn giữ một ngày với tổng 0 lỗi thì nhập số 0 vào một ô của ngày đó. */
+function dayHasData(line,key){const o=line.data[key]||{};return S.cat.some(e=>qtyKeys(e).some(k=>o[k]!==''&&o[k]!=null))}
+function activeDays(line){return dates().filter(d=>dayHasData(line,d.key))}
+function entries(line,key){
+  const o=line.data[key]||{};const out=[];
+  S.cat.forEach(e=>{
+    [{k:e.id,cause:e.cause,fix:e.fix,end:e.end}].concat((e.alts||[]).map(a=>({k:e.id+'~'+a.id,cause:a.cause,fix:a.fix,end:a.end}))).forEach(x=>{
+      const q=+o[x.k]||0;if(q>0)out.push({cn:e.cn,q,vi:e.vi,cause:x.cause,fix:x.fix,end:x.end})})});
+  return out;
+}
+function renderPreview(){
+  $('#pvbody').innerHTML=S.lines.map(line=>`<h2>${esc(line.name)}</h2>`+(activeDays(line).length?'':'<p class="hint">Chưa có số liệu, line này sẽ không được hiển thị.</p>')+activeDays(line).map(d=>{
+    const en=entries(line,d.key);const sum=en.reduce((t,x)=>t+x.q,0);
+    return `<div class="pvday"><div class="pvtitle">${esc(line.name)} ${d.label}</div><div class="pvwrap"><table class="pv"><colgroup><col style="width:15.5%"><col style="width:6.5%"><col style="width:15.5%"><col style="width:20.5%"><col style="width:35.5%"><col style="width:6.5%"></colgroup>
+      <tr><th>Báo Lỗi</th><th>Số Lỗi</th><th>Tên Lỗi</th><th>Nguyên Nhân</th><th>Cách Xử Lý</th><th>Kết Luận</th></tr>`+
+      en.map(x=>`<tr><td>${esc(x.cn)}</td><td class="c">${x.q}</td><td>${esc(x.vi)}</td><td>${esc(x.cause)}</td><td>${esc(x.fix)}</td><td class="c">${esc(x.end)}</td></tr>`).join('')+
+      `<tr><td><b>总计</b></td><td class="c"><b>${sum}</b></td><td></td><td></td><td></td><td></td></tr></table></div></div>`}).join('')).join('');
+  $('#pv').classList.add('on');$('#pv').scrollTop=0;
+}
+
+async function exportXlsx(merge){
+  if(typeof ExcelJS==='undefined'){alert('Chưa tải được thư viện Excel. Kiểm tra mạng rồi thử lại.');return}
+  if(!S.lines.some(l=>activeDays(l).length)){alert('Chưa có số liệu nào để xuất.');return}
+  const wb=new ExcelJS.Workbook();
+  const thin={style:'thin',color:{argb:'FF000000'}};
+  const border={top:thin,left:thin,bottom:thin,right:thin};
+  const used=new Set();
+  let mws=null,mr=1; /* sheet gộp + dòng bắt đầu của line kế tiếp */
+  //chỉnh kích thước các ô (Báo Lỗi, Số Lỗi, Tên Lỗi, Nguyên Nhân, Cách Xử Lý, Kết Luận)
+  const COLW=[30,12,30,40,70,12];
+  S.lines.forEach((line,idx)=>{
+    const days=activeDays(line);if(!days.length)return;
+    let nm=(line.name||'Line '+(idx+1)).replace(/[\\\/\?\*\[\]:]/g,'').slice(0,28)||'Line';
+    while(used.has(nm.toLowerCase()))nm+='_';used.add(nm.toLowerCase());
+    let ws,r;
+    if(merge){
+      if(!mws){mws=wb.addWorksheet('Tổng hợp');COLW.forEach((w,i)=>mws.getColumn(i+1).width=w)}
+      ws=mws;r=mr;
+    }else{
+      ws=wb.addWorksheet(nm);
+      COLW.forEach((w,i)=>ws.getColumn(i+1).width=w);
+      r=1;
+    }
+    days.forEach(d=>{
+      const o=line.data[d.key]||{};
+      ws.mergeCells(r,1,r,6);
+      const t=ws.getCell(r,1);t.value=`${line.name} ${d.label}`;
+      t.font={name:'Times New Roman',size:16,bold:true,color:{argb:'FFFFFFFF'}};
+      t.alignment={horizontal:'center',vertical:'middle'};
+      t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFC000'}};
+      ws.getRow(r).height=24;r++;
+      ['Báo Lỗi','Số Lỗi','Tên Lỗi','Nguyên Nhân','Cách Xử Lý','Kết Luận'].forEach((h,i)=>{
+        const c=ws.getCell(r,i+1);c.value=h;c.font={name:'Arial',size:11,bold:true};c.alignment={horizontal:'center',vertical:'middle'};c.border=border});
+      r++;
+      const first=r;
+      let sum=0;
+      S.cat.forEach(e=>{
+        const vs=[{k:e.id,cause:e.cause,fix:e.fix,end:e.end}].concat((e.alts||[]).map(a=>({k:e.id+'~'+a.id,cause:a.cause,fix:a.fix,end:a.end})));
+        vs.forEach(x=>{
+          const q=+o[x.k]||0;if(q<=0)return;sum+=q;
+          [e.cn,q,e.vi,x.cause,x.fix,x.end].forEach((v,i)=>{
+            const c=ws.getCell(r,i+1);c.value=v;c.font={name:'SimSun',size:11};c.border=border;
+            c.alignment={horizontal:(i===1||i===5)?'center':'left',vertical:'middle',wrapText:true}});
+          r++;
+        });
+      });
+      ws.getCell(r,1).value='总计';ws.getCell(r,2).value=(r>first)?{formula:`SUM(B${first}:B${r-1})`,result:sum}:0;
+      for(let i=1;i<=6;i++){const c=ws.getCell(r,i);c.border=border;c.font={name:'SimSun',size:11,bold:i<=2};if(i===2)c.alignment={horizontal:'center'}}
+      r++;
+    });
+    mr=r+1; /* chừa 1 dòng trống giữa các line khi gộp */
+  });
+  const buf=await wb.xlsx.writeBuffer();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  const f=dates();a.download=`DPO_BaoLoi_${f[0].label.replace('/','.')}-${f[f.length-1].label.replace('/','.')}${merge?'_Gop':''}.xlsx`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+renderAll();
+</script>
+</body>
+</html>
