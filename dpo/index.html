@@ -194,7 +194,7 @@ document.addEventListener('click',ev=>{
     if(j<0||j>=S.lines.length)return;
     [S.lines[S.cur],S.lines[j]]=[S.lines[j],S.lines[S.cur]];
     S.cur=j;save();renderAll();return}
-  if(t.id==='delLine'){if(confirm('Xoá '+S.lines[S.cur].name+'?')){S.lines.splice(S.cur,1);S.cur=0;save();renderAll()}return}
+  if(t.id==='delLine'){if(confirm('Xoá '+S.lines[S.cur].name+'?')){S.lines.splice(S.cur,1);S.cur=Math.max(0,S.cur-1);save();renderAll()}return}
   if(t.id==='copyPrev'){if(S.cur>0){S.lines[S.cur].data=JSON.parse(JSON.stringify(S.lines[S.cur-1].data));save();renderDays()}else alert('Đây là line đầu tiên.');return}
   if(t.id==='addErr'){S.cat.push({id:'e'+Date.now(),cn:'',vi:'Lỗi mới',cause:'',fix:'',end:'OP'});save();renderCat();renderDays();return}
   if(t.id==='syncErr'){
