@@ -112,13 +112,13 @@ function dayTotal(line,key){const o=line.data[key]||{};return S.cat.reduce((t,e)
 
 function renderTop(){
   $('#start').value=S.start;$('#ndays').value=String(S.n);
-  $('#tabs').innerHTML=S.lines.map((l,i)=>`<button class="tab ${i===S.cur?'on':''}" data-i="${i}">${esc(l.name)}</button>`).join('')+`<button class="tab" id="addLine">Thêm Line</button>`;
+  $('#tabs').innerHTML=S.lines.map((l,i)=>`<button class="tab ${i===S.cur?'on':''}" data-i="${i}">${esc(l.name)}</button>`).join('')+`<button class="tab" id="addLine">Thêm Line</button>
+  ${S.lines.length>1?'<button class="tab" id="delLine">Xoá line</button>':''}`;
   const l=S.lines[S.cur];
   $('#lineTools').innerHTML=`<div class="f"><label for="lname">Tên line có thể sửa</label><input id="lname" value="${esc(l.name)}"></div>
     <button id="moveL" ${S.cur===0?'disabled':''}>◀ Dời trái</button>
     <button id="moveR" ${S.cur===S.lines.length-1?'disabled':''}>Dời phải ▶</button>
-    <button id="copyPrev" title="Chép số liệu line trước">Copy line trước</button>
-    ${S.lines.length>1?'<button class="danger" id="delLine">Xoá line</button>':''}`;
+    <button id="copyPrev" title="Chép số liệu line trước">Copy line trước</button>`;
 }
 function renderDays(){
   const l=S.lines[S.cur];
