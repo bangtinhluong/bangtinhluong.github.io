@@ -20,7 +20,7 @@ h1{font-size:20px;margin:6px 0 12px}
 h2{font-size:15px;margin:0 0 8px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
-label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
+label{font-size:18px;color:var(--ink);display:block;margin-bottom:3px}
 input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
 input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .f{flex:1;min-width:130px}
@@ -44,6 +44,17 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
 .bar button{flex:1}
 .err.alt{margin-left:14px;border-left:3px solid var(--amber);padding-left:10px}
 .alt-box{border-left:3px solid var(--amber);padding-left:10px;margin-top:6px;display:grid;gap:8px}
+#pv{position:fixed;inset:0;background:var(--bg);z-index:50;overflow:auto;padding:0 12px calc(20px + env(safe-area-inset-bottom,0px));display:none}
+#pv.on{display:block}
+.pvbar{position:sticky;top:0;background:var(--bg);display:flex;gap:8px;padding:10px 0;z-index:2;border-bottom:1px solid var(--line);margin-bottom:10px}
+.pvbar button{flex:1}
+.pvday{margin-bottom:14px}
+.pvtitle{background:#ffc000;color:#fff;text-align:center;font:700 16px 'Times New Roman',serif;padding:4px}
+.pvwrap{overflow-x:auto}
+table.pv{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px;background:var(--card)}
+table.pv th,table.pv td{border:1px solid var(--muted);padding:3px 5px;text-align:left;vertical-align:middle}
+table.pv th{text-align:center}
+table.pv td.c{text-align:center}
 .hint{color:var(--muted);font-size:13px;margin:4px 0 0}
 </style>
 </head>
@@ -77,12 +88,18 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
 </div>
 
 <div class="bar">
+  <button id="previewBtn">Xem trước</button>
+  <button class="primary" id="exportMergeBtn">Gộp Line</button>
   <button class="primary" id="exportBtn">Xuất Excel</button>
-  <button class="primary" id="exportMergeBtn">Xuất bản gộp line</button>
+</div>
+
+<div id="pv">
+  <div class="pvbar"><button id="pvClose">← Đóng</button><button class="primary" id="pvExportMerge">Gộp Line</button><button class="primary" id="pvExport">Xuất Excel</button></div>
+  <div id="pvbody"></div>
 </div>
 
 <script>
-const KEY='loi_report_v2';
+const KEY='loi_report_v1';
 const DEFAULT_CAT=[
  {id:'e1',cn:'Mes查询失败',vi:'Lọt trạm',cause:'Chưa sảo mã vào trạm DPO',fix:'Yêu cầu sản xuất sảo mã vào trạm DPO trước khi cho liệu vào máy',end:'OP'},
  {id:'e2',cn:'盒子放反请重新放盒子',vi:'Hộp thả ngược',cause:'Công đoạn trên dán tem sai vị trí',fix:'Quay hộp ngược lại và dán lại tem đúng vị trí',end:'OP'},
@@ -100,6 +117,8 @@ let S=load()||{start:mondayISO(),n:6,cat:DEFAULT_CAT.map(d=>({...d})),lines:[{na
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 /* Tự thêm lỗi mới viết trong code (DEFAULT_CAT) vào danh sách đã lưu, trừ lỗi bạn đã chủ động xoá */
 S.deleted=S.deleted||[];
+/* Sang tuần mới thì tự chọn thứ Hai của tuần đó; trong cùng tuần vẫn giữ ngày bạn đã chọn tay */
+if(S.weekOf!==mondayISO()){S.start=mondayISO();S.weekOf=mondayISO()}
 DEFAULT_CAT.forEach(d=>{if(!S.cat.some(e=>e.id===d.id)&&!S.deleted.includes(d.id))S.cat.push({...d})});
 save();
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -190,12 +209,33 @@ document.addEventListener('click',ev=>{
     if(!back.length){alert('Không có lỗi nào đã xoá để khôi phục.');return}
     S.trash=[];S.deleted=[];save();renderCat();renderDays();
     alert('Đã khôi phục '+back.length+' lỗi.');return}
-  if(t.dataset.adda!==undefined){const e=S.cat[+t.dataset.adda];(e.alts=e.alts||[]).push({id:'a'+Date.now(),label:'Nguyên nhân khác',cause:'',fix:'',end:'Machine'});save();renderCat();renderDays();return}
+  if(t.dataset.adda!==undefined){const e=S.cat[+t.dataset.adda];(e.alts=e.alts||[]).push({id:'a'+Date.now(),label:'#Nguyên nhân khác',cause:'',fix:'',end:'Machine'});save();renderCat();renderDays();return}
   if(t.dataset.dela!==undefined){const [i,j]=t.dataset.dela.split(':').map(Number);if(confirm('Xoá nguyên nhân này?')){S.cat[i].alts.splice(j,1);save();renderCat();renderDays()}return}
   if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){const [x]=S.cat.splice(+t.dataset.delc,1);if(x){if(!S.deleted.includes(x.id))S.deleted.push(x.id);S.trash=(S.trash||[]).filter(y=>y.id!==x.id);S.trash.push({...x})}save();renderCat();renderDays()}return}
+  if(t.id==='previewBtn'){renderPreview();return}
+  if(t.id==='pvClose'){$('#pv').classList.remove('on');return}
+  if(t.id==='pvExport'){exportXlsx(false);return}
+  if(t.id==='pvExportMerge'){exportXlsx(true);return}
   if(t.id==='exportBtn')exportXlsx(false);
   if(t.id==='exportMergeBtn')exportXlsx(true);
 });
+
+function entries(line,key){
+  const o=line.data[key]||{};const out=[];
+  S.cat.forEach(e=>{
+    [{k:e.id,cause:e.cause,fix:e.fix,end:e.end}].concat((e.alts||[]).map(a=>({k:e.id+'~'+a.id,cause:a.cause,fix:a.fix,end:a.end}))).forEach(x=>{
+      const q=+o[x.k]||0;if(q>0)out.push({cn:e.cn,q,vi:e.vi,cause:x.cause,fix:x.fix,end:x.end})})});
+  return out;
+}
+function renderPreview(){
+  $('#pvbody').innerHTML=S.lines.map(line=>`<h2>${esc(line.name)}</h2>`+dates().map(d=>{
+    const en=entries(line,d.key);const sum=en.reduce((t,x)=>t+x.q,0);
+    return `<div class="pvday"><div class="pvtitle">${esc(line.name)} ${d.label}</div><div class="pvwrap"><table class="pv">
+      <tr><th>Báo Lỗi</th><th>Số Lỗi</th><th>Tên Lỗi</th><th>Nguyên Nhân</th><th>Cách Xử Lý</th><th>Kết Luận</th></tr>`+
+      en.map(x=>`<tr><td>${esc(x.cn)}</td><td class="c">${x.q}</td><td>${esc(x.vi)}</td><td>${esc(x.cause)}</td><td>${esc(x.fix)}</td><td class="c">${esc(x.end)}</td></tr>`).join('')+
+      `<tr><td><b>总计</b></td><td class="c"><b>${sum}</b></td><td></td><td></td><td></td><td></td></tr></table></div></div>`}).join('')).join('');
+  $('#pv').classList.add('on');$('#pv').scrollTop=0;
+}
 
 async function exportXlsx(merge){
   if(typeof ExcelJS==='undefined'){alert('Chưa tải được thư viện Excel. Kiểm tra mạng rồi thử lại.');return}
