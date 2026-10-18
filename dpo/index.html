@@ -51,8 +51,8 @@ details summary{border-bottom:solid var(--ink);cursor:pointer;font-weight:700;pa
 .pvday{margin-bottom:14px}
 .pvtitle{background:#ffc000;color:#fff;text-align:center;font:700 16px 'Times New Roman',serif;padding:4px}
 .pvwrap{overflow-x:auto}
-table.pv{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px;background:var(--card)}
-table.pv th,table.pv td{border:1px solid var(--muted);padding:3px 5px;text-align:left;vertical-align:middle}
+table.pv{border-collapse:collapse;table-layout:fixed;width:100%;min-width:760px;font-size:12.5px;background:var(--card)}
+table.pv th,table.pv td{border:1px solid var(--muted);padding:3px 5px;text-align:left;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word}
 table.pv th{text-align:center}
 table.pv td.c{text-align:center}
 .hint{color:var(--muted);font-size:13px;margin:4px 0 0}
@@ -230,7 +230,7 @@ function entries(line,key){
 function renderPreview(){
   $('#pvbody').innerHTML=S.lines.map(line=>`<h2>${esc(line.name)}</h2>`+dates().map(d=>{
     const en=entries(line,d.key);const sum=en.reduce((t,x)=>t+x.q,0);
-    return `<div class="pvday"><div class="pvtitle">${esc(line.name)} ${d.label}</div><div class="pvwrap"><table class="pv">
+    return `<div class="pvday"><div class="pvtitle">${esc(line.name)} ${d.label}</div><div class="pvwrap"><table class="pv"><colgroup><col style="width:15.5%"><col style="width:6.5%"><col style="width:15.5%"><col style="width:20.5%"><col style="width:35.5%"><col style="width:6.5%"></colgroup>
       <tr><th>Báo Lỗi</th><th>Số Lỗi</th><th>Tên Lỗi</th><th>Nguyên Nhân</th><th>Cách Xử Lý</th><th>Kết Luận</th></tr>`+
       en.map(x=>`<tr><td>${esc(x.cn)}</td><td class="c">${x.q}</td><td>${esc(x.vi)}</td><td>${esc(x.cause)}</td><td>${esc(x.fix)}</td><td class="c">${esc(x.end)}</td></tr>`).join('')+
       `<tr><td><b>总计</b></td><td class="c"><b>${sum}</b></td><td></td><td></td><td></td><td></td></tr></table></div></div>`}).join('')).join('');
