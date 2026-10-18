@@ -28,7 +28,7 @@ button{font:inherit;border:1px solid var(--line);background:var(--card);color:va
 button.primary{background:var(--amber);border-color:var(--amber);color:#1d1d1b;font-weight:700}
 button.danger{font-weight:500;color:var(--ink);background:var(--amber)}
 button:disabled{opacity:.4;cursor:default}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px}
+.tabs{display:flex;flex-wrap:wrap;gap:5px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px}
 .tab{white-space:nowrap}
 .tab.on{background:var(--amber);border-color:var(--amber);color:#1d1d1b;font-weight:700}
 .dayhead{display:flex;justify-content:space-between;align-items:center;background:var(--amber);color:#1d1d1b;margin:-12px -12px 10px;padding:8px 12px;border-radius:9px 9px 0 0;font-weight:700}
@@ -138,8 +138,8 @@ function renderTop(){
   ${S.lines.length>1?'<button class="tab" id="delLine">Xoá line</button>':''}`;
   const l=S.lines[S.cur];
   $('#lineTools').innerHTML=`<div class="f"><label for="lname">Tên line có thể sửa</label><input id="lname" value="${esc(l.name)}"></div>
-    <button id="moveL" ${S.cur===0?'disabled':''}>◀ Dời trái</button>
-    <button id="moveR" ${S.cur===S.lines.length-1?'disabled':''}>Dời phải ▶</button>
+    <button id="moveL" ${S.cur===0?'disabled':''}>◀ Trái</button>
+    <button id="moveR" ${S.cur===S.lines.length-1?'disabled':''}>Phải ▶</button>
     <button id="copyPrev" title="Chép số liệu line trước">Copy line trước</button>`;
 }
 function renderDays(){
