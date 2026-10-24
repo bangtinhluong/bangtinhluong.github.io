@@ -147,7 +147,8 @@ const DEFAULT_CAT=[
 function mondayISO(){const d=new Date();const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return iso(d)}
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.lines)return s}catch(e){}return null}
-let S=load()||{start:mondayISO(),n:6,cat:DEFAULT_CAT.map(d=>({...d})),lines:[{name:'Line 1',data:{}}],cur:0};
+//tự động chọn ngày 5 là mặc định
+let S=load()||{start:mondayISO(),n:5,cat:DEFAULT_CAT.map(d=>({...d})),lines:[{name:'Line 1',data:{}}],cur:0};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 /* Tự thêm lỗi mới viết trong code (DEFAULT_CAT) vào danh sách đã lưu, trừ lỗi bạn đã chủ động xoá */
 S.deleted=S.deleted||[];
