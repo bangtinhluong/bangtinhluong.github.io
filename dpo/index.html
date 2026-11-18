@@ -37,7 +37,7 @@ button:disabled{opacity:.4;cursor:default}
 .err b{display:block;font-size:15px}
 .err small{color:var(--muted);display:block;font-size:12.5px;word-break:break-word}
 .err input{text-align:center;font-size:18px;font-weight:700;padding:8px 4px}
-details summary{border-bottom:solid var(--ink);cursor:pointer;font-weight:700;padding:4px 0}
+details summary{border-bottom:solid var(--danger);cursor:pointer;font-weight:700;padding:4px 0}
 .cat{border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0}
 .cat .g{display:grid;gap:8px}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;max-width:720px;margin:0 auto}
@@ -56,7 +56,7 @@ table.pv th,table.pv td{border:1px solid var(--muted);padding:3px 5px;text-align
 table.pv th{text-align:center}
 table.pv td.c{text-align:center}
 details.rare{margin-top:8px}
-details.rare>summary{font-weight:500;color:var(--muted)}
+details.rare>summary{font-weight:500;color:var(--ink)}
 input[type=checkbox]{width:auto;margin-right:8px;vertical-align:middle}
 .hint{color:var(--muted);font-size:13px;margin:4px 0 0}
 </style>
@@ -225,7 +225,7 @@ function renderDays(){
     const open=rar.some(e=>qtyKeys(e).some(k=>o[k]!==''&&o[k]!=null))||OPEN.has(rk);
     return `<div class="card"><div class="dayhead"><span>${esc(l.name)} ${d.label}</span><span>Tổng: <span data-total="${d.key}">${dayTotal(l,d.key)}</span></span></div>`+
       com.map(e=>errRows(e,d,o)).join('')+
-      (rar.length?`<details class="rare" data-oid="${rk}" ${open?'open':''}><summary>Lỗi khác (${rar.length})</summary>${rar.map(e=>errRows(e,d,o)).join('')}</details>`:'')+`</div>`;
+      (rar.length?`<details class="rare" data-oid="${rk}" ${open?'open':''}><summary>Thêm Lỗi khác (${rar.length})</summary>${rar.map(e=>errRows(e,d,o)).join('')}</details>`:'')+`</div>`;
   }).join('');
 }
 function catCard(e,i){
@@ -247,7 +247,7 @@ function catCard(e,i){
 }
 function renderCat(){
   const com=[],rar=[];S.cat.forEach((e,i)=>(isCommon(e,i)?com:rar).push(catCard(e,i)));
-  $('#catalog').innerHTML=com.join('')+(rar.length?`<details class="rare" data-oid="c:rare" ${OPEN.has('c:rare')?'open':''}><summary>Thêm lỗi khác (${rar.length})</summary>${rar.join('')}</details>`:'');
+  $('#catalog').innerHTML=com.join('')+(rar.length?`<details class="rare" data-oid="c:rare" ${OPEN.has('c:rare')?'open':''}><summary>Mở lỗi ít dùng (${rar.length})</summary>${rar.join('')}</details>`:'');
 }
 function renderAll(){renderTop();renderDays();renderCat();$('#ver').textContent='Đang có '+S.cat.length+' lỗi (trong code có '+DEFAULT_CAT.length+' lỗi mặc định)'}
 
