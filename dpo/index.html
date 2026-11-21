@@ -32,12 +32,12 @@ button:disabled{opacity:.4;cursor:default}
 .tab{white-space:nowrap}
 .tab.on{background:var(--amber);border-color:var(--amber);color:#1d1d1b;font-weight:700}
 .dayhead{display:flex;justify-content:space-between;align-items:center;background:var(--amber);color:#1d1d1b;margin:-12px -12px 10px;padding:8px 12px;border-radius:9px 9px 0 0;font-weight:700}
-.err{display:grid;grid-template-columns:1fr 84px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.err{display:grid;grid-template-columns:1fr 84px;gap:10px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line)}
 .err:last-of-type{border-bottom:0}
 .err b{display:block;font-size:15px}
 .err small{color:var(--muted);display:block;font-size:12.5px;word-break:break-word}
-.err input{text-align:center;font-size:18px;font-weight:700;padding:8px 4px}
-details summary{border-bottom:solid var(--danger);cursor:pointer;font-weight:700;padding:8px;background: var(--ok);color: var(--line)}
+.err input{text-align:center;font-size:18px;font-weight:700;padding:4px 4px}
+details summary{border-bottom:solid var(--danger);cursor:pointer;font-weight:700;padding:8px;background: var(--ink);color: var(--line);border-radius: 10px;}
 .cat{border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0}
 .cat .g{display:grid;gap:8px}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;max-width:720px;margin:0 auto}
@@ -209,9 +209,9 @@ function isCommon(e,i){return e.common===undefined?i<5:!!e.common}
 document.addEventListener('toggle',ev=>{const d=ev.target;if(d.tagName==='DETAILS'&&d.dataset&&d.dataset.oid){if(d.open)OPEN.add(d.dataset.oid);else OPEN.delete(d.dataset.oid)}},true);
 document.addEventListener('change',ev=>{const t=ev.target;if(t.dataset&&t.dataset.common!==undefined){S.cat[+t.dataset.common].common=t.checked;save();renderCat();renderDays()}});
 function errRows(e,d,o){
-  return `<div class="err"><div><b>${esc(e.vi)}</b><small>${esc(e.cn)}</small></div>
+  return `<div class="err" title="${esc(e.vi)}"><div><b>${esc(e.cn||e.vi)}</b></div>
       <input type="number" inputmode="numeric" min="0" placeholder="0" data-k="${d.key}" data-e="${e.id}" value="${o[e.id]??''}"></div>`+
-    (e.alts||[]).map(a=>`<div class="err alt"><div><b>↳ ${esc(a.label||'Nguyên nhân khác')}</b><small>${esc(a.end)}${a.cause?' · '+esc(a.cause):''}</small></div>
+    (e.alts||[]).map(a=>`<div class="err alt"><div><b>↳ ${esc(a.label||'Nguyên nhân khác')}${a.end?' · '+esc(a.end):''}</b></div>
       <input type="number" inputmode="numeric" min="0" placeholder="0" data-k="${d.key}" data-e="${e.id}~${a.id}" value="${o[e.id+'~'+a.id]??''}"></div>`).join('');
 }
 function renderDays(){
@@ -229,7 +229,7 @@ function renderDays(){
   }).join('');
 }
 function catCard(e,i){
-  return `<details class="cat" data-oid="c:${e.id}" ${OPEN.has('c:'+e.id)?'open':''}><summary>${esc(e.vi||'(chưa đặt tên)')}${isCommon(e,i)?'':' <small style="color:var(--muted);font-weight:400">(ít gặp)</small>'}</summary><div class="g">
+  return `<details class="cat" data-oid="c:${e.id}" ${OPEN.has('c:'+e.id)?'open':''}><summary>${esc(e.cn||e.vi||'(chưa đặt tên)')}${isCommon(e,i)?'':' <small style="color:var(--muted);font-weight:400">(ít gặp)</small>'}</summary><div class="g">
     <label><input type="checkbox" data-common="${i}" ${isCommon(e,i)?'checked':''}>Lỗi thường gặp (hiện ngay ở danh sách chính)</label>
     <div><label>Báo lỗi (tiếng Trung / tên trên máy)</label><input data-c="${i}" data-f="cn" value="${esc(e.cn)}"></div>
     <div><label>Tên lỗi</label><input data-c="${i}" data-f="vi" value="${esc(e.vi)}"></div>
@@ -289,7 +289,7 @@ document.addEventListener('click',ev=>{
     if(!back.length){alert('Không có lỗi nào đã xoá để khôi phục.');return}
     S.trash=[];S.deleted=[];save();renderCat();renderDays();
     alert('Đã khôi phục '+back.length+' lỗi.');return}
-  if(t.dataset.adda!==undefined){const e=S.cat[+t.dataset.adda];(e.alts=e.alts||[]).push({id:'a'+Date.now(),label:'#Nguyên nhân khác',cause:'Ghi nguyên nhân gây lỗi',fix:'Ghi cách xử lý lỗi',end:'OP hoặc Machine'});save();renderCat();renderDays();return}
+  if(t.dataset.adda!==undefined){const e=S.cat[+t.dataset.adda];(e.alts=e.alts||[]).push({id:'a'+Date.now(),label:'#Nguyên nhân khác',cause:'Ghi nguyên nhân gây lỗi',fix:'Ghi cách xử lý lỗi',end:'Machine'});save();renderCat();renderDays();return}
   if(t.dataset.dela!==undefined){const [i,j]=t.dataset.dela.split(':').map(Number);if(confirm('Xoá nguyên nhân này?')){S.cat[i].alts.splice(j,1);save();renderCat();renderDays()}return}
   if(t.dataset.delc!==undefined){if(confirm('Xoá lỗi này khỏi danh sách?')){const [x]=S.cat.splice(+t.dataset.delc,1);if(x){if(!S.deleted.includes(x.id))S.deleted.push(x.id);S.trash=(S.trash||[]).filter(y=>y.id!==x.id);S.trash.push({...x})}save();renderCat();renderDays()}return}
   if(t.id==='previewBtn'){renderPreview();return}
