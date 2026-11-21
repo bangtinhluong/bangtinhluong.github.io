@@ -225,7 +225,7 @@ function renderDays(){
     const open=rar.some(e=>qtyKeys(e).some(k=>o[k]!==''&&o[k]!=null))||OPEN.has(rk);
     return `<div class="card"><div class="dayhead"><span>${esc(l.name)} ${d.label}</span><span>Tổng: <span data-total="${d.key}">${dayTotal(l,d.key)}</span></span></div>`+
       com.map(e=>errRows(e,d,o)).join('')+
-      (rar.length?`<details class="rare" data-oid="${rk}" ${open?'open':''}><summary>Thêm Lỗi khác (${rar.length})</summary>${rar.map(e=>errRows(e,d,o)).join('')}</details>`:'')+`</div>`;
+      (rar.length?`<details class="rare" data-oid="${rk}" ${open?'open':''}><summary>Mở thêm ${rar.length} Lỗi khác</summary>${rar.map(e=>errRows(e,d,o)).join('')}</details>`:'')+`</div>`;
   }).join('');
 }
 function catCard(e,i){
